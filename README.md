@@ -96,7 +96,7 @@ Lineamientos integrales que transforman a cualquier desarrollador en un generado
 - **Quality Gates**: Verificaciones automáticas y manuales para excelencia de código
 
 **Beneficios Clave:**
-- 🧠 **Seniority Instantánea**: Desarrolladores junior producen código de calidad senior
+- 🧠 **Seniority Instantánea**: Desarrolladores junior y mid producen código de calidad senior
 - 🏗️ **Consistencia Arquitectónica**: Patrones estandarizados entre proyectos
 - 📚 **Transferencia de Conocimiento**: Mejores prácticas embebidas en workflows
 - ⚡ **Aprendizaje Acelerado**: Aprende mientras construyes con guía de AI
@@ -131,7 +131,7 @@ graph LR
 
 **[Cursor](https://cursor.sh)** es el AI Code Editor que potencia todo el framework a través de:
 
-- **📋 Composer**: Para generación de PRDs y planificación estructurada
+- **📋 AI Chat**: Para generación de PRDs y planificación estructurada
 - **🗂️ .mdc files**: Scripts reutilizables que implementan el Task-Driven Development
 - **🤖 AI Chat**: Interacción natural para desarrollo guiado por tareas
 - **⚡ Apply**: Implementación rápida con revisión humana
