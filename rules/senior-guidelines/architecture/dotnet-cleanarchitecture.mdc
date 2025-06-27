@@ -1,0 +1,828 @@
+# Cursor Rules - Clean Architecture (Jason Taylor Template)
+
+## Overview
+These cursor rules are based on the [Jason Taylor Clean Architecture template](https://github.com/jasontaylordev/CleanArchitecture) - the most popular .NET Clean Architecture implementation with 18.4k+ stars. Follow these conventions to generate code that aligns with industry-standard Clean Architecture patterns.
+
+## Project Structure Rules
+
+### Layer Organization
+```
+src/
+├── Domain/               # Enterprise business rules
+├── Application/          # Application business rules  
+├── Infrastructure/       # External concerns (data, external services)
+└── Web/                 # Presentation layer (API, UI)
+
+tests/
+├── Application.UnitTests/
+├── Application.IntegrationTests/
+├── Application.FunctionalTests/
+└── Web.AcceptanceTests/
+```
+
+### File Naming Conventions
+- **Commands**: `{Action}{Entity}Command.cs` (e.g., `CreateTodoListCommand.cs`)
+- **Queries**: `{Action}{Entity}Query.cs` (e.g., `GetTodoListsQuery.cs`)
+- **Handlers**: `{Command/Query}Handler.cs` (e.g., `CreateTodoListCommandHandler.cs`)
+- **Validators**: `{Command/Query}Validator.cs` (e.g., `CreateTodoListCommandValidator.cs`)
+- **DTOs**: `{Entity}Dto.cs` or `{Purpose}Vm.cs` (e.g., `TodoListDto.cs`, `TodoListsVm.cs`)
+
+## Domain Layer Rules
+
+### Entities
+```csharp
+// Domain entities should inherit from BaseAuditableEntity
+public class TodoList : BaseAuditableEntity
+{
+    public string Title { get; set; } = null!;
+    public Colour Colour { get; set; } = Colour.Blue;
+    public IList<TodoItem> Items { get; private set; } = new List<TodoItem>();
+}
+
+// Base entity pattern
+public abstract class BaseEntity
+{
+    public int Id { get; set; }
+}
+
+public abstract class BaseAuditableEntity : BaseEntity
+{
+    public DateTimeOffset Created { get; set; }
+    public string? CreatedBy { get; set; }
+    public DateTimeOffset LastModified { get; set; }
+    public string? LastModifiedBy { get; set; }
+}
+```
+
+### Value Objects
+```csharp
+// Value objects should be immutable
+public class Colour : ValueObject
+{
+    static Colour()
+    {
+        White = new(nameof(White), "#FFFFFF");
+        Black = new(nameof(Black), "#000000");
+    }
+
+    public string Name { get; private set; }
+    public string Code { get; private set; }
+
+    public static Colour White { get; }
+    public static Colour Black { get; }
+
+    private Colour(string name, string code)
+    {
+        Name = name;
+        Code = code;
+    }
+
+    protected override IEnumerable<object> GetEqualityComponents()
+    {
+        yield return Name;
+        yield return Code;
+    }
+}
+```
+
+### Domain Events
+```csharp
+public class TodoItemCreatedEvent : BaseEvent
+{
+    public TodoItemCreatedEvent(TodoItem item)
+    {
+        Item = item;
+    }
+
+    public TodoItem Item { get; }
+}
+```
+
+## Application Layer Rules
+
+### CQRS Commands
+```csharp
+// Command with MediatR
+public record CreateTodoListCommand : IRequest<int>
+{
+    public string Title { get; init; } = null!;
+}
+
+// Command Handler
+public class CreateTodoListCommandHandler : IRequestHandler<CreateTodoListCommand, int>
+{
+    private readonly IApplicationDbContext _context;
+
+    public CreateTodoListCommandHandler(IApplicationDbContext context)
+    {
+        _context = context;
+    }
+
+    public async Task<int> Handle(CreateTodoListCommand request, CancellationToken cancellationToken)
+    {
+        var entity = new TodoList
+        {
+            Title = request.Title,
+            Colour = Colour.Blue
+        };
+
+        _context.TodoLists.Add(entity);
+        await _context.SaveChangesAsync(cancellationToken);
+
+        return entity.Id;
+    }
+}
+```
+
+### CQRS Queries
+```csharp
+// Query with response DTO
+public record GetTodoListsQuery : IRequest<TodoListsVm>;
+
+// Query Handler
+public class GetTodoListsQueryHandler : IRequestHandler<GetTodoListsQuery, TodoListsVm>
+{
+    private readonly IApplicationDbContext _context;
+    private readonly IMapper _mapper;
+
+    public GetTodoListsQueryHandler(IApplicationDbContext context, IMapper mapper)
+    {
+        _context = context;
+        _mapper = mapper;
+    }
+
+    public async Task<TodoListsVm> Handle(GetTodoListsQuery request, CancellationToken cancellationToken)
+    {
+        return new TodoListsVm
+        {
+            PriorityLevels = Enum.GetValues(typeof(PriorityLevel))
+                .Cast<PriorityLevel>()
+                .Select(p => new PriorityLevelDto { Value = (int)p, Name = p.ToString() })
+                .ToArray(),
+
+            Lists = await _context.TodoLists
+                .AsNoTracking()
+                .ProjectTo<TodoListDto>(_mapper.ConfigurationProvider)
+                .OrderBy(t => t.Title)
+                .ToListAsync(cancellationToken)
+        };
+    }
+}
+```
+
+### Validation Rules
+```csharp
+// FluentValidation validators
+public class CreateTodoListCommandValidator : AbstractValidator<CreateTodoListCommand>
+{
+    private readonly IApplicationDbContext _context;
+
+    public CreateTodoListCommandValidator(IApplicationDbContext context)
+    {
+        _context = context;
+
+        RuleFor(v => v.Title)
+            .NotEmpty().WithMessage("Title is required.")
+            .MaximumLength(200).WithMessage("Title must not exceed 200 characters.")
+            .MustAsync(BeUniqueTitle).WithMessage("The specified title already exists.");
+    }
+
+    public async Task<bool> BeUniqueTitle(string title, CancellationToken cancellationToken)
+    {
+        return await _context.TodoLists
+            .AllAsync(l => l.Title != title, cancellationToken);
+    }
+}
+```
+
+### AutoMapper Profiles
+```csharp
+public class MappingProfile : Profile
+{
+    public MappingProfile()
+    {
+        CreateMap<TodoList, TodoListDto>()
+            .ForMember(d => d.IsFavourite, opt => opt.Ignore());
+        
+        CreateMap<TodoItem, TodoItemDto>()
+            .ForMember(d => d.Priority, opt => opt.MapFrom(s => (int)s.Priority));
+    }
+}
+```
+
+### DTOs and ViewModels
+```csharp
+// Response DTOs
+public class TodoListsVm
+{
+    public IReadOnlyCollection<PriorityLevelDto> PriorityLevels { get; init; } = Array.Empty<PriorityLevelDto>();
+    public IReadOnlyCollection<TodoListDto> Lists { get; init; } = Array.Empty<TodoListDto>();
+}
+
+public class TodoListDto
+{
+    public int Id { get; init; }
+    public string Title { get; init; } = null!;
+    public string Colour { get; init; } = null!;
+    public IReadOnlyCollection<TodoItemDto> Items { get; init; } = Array.Empty<TodoItemDto>();
+}
+```
+
+## Infrastructure Layer Rules
+
+### DbContext Configuration
+```csharp
+public class ApplicationDbContext : DbContext, IApplicationDbContext
+{
+    private readonly IMediator _mediator;
+    private readonly AuditableEntitySaveChangesInterceptor _auditableEntitySaveChangesInterceptor;
+
+    public ApplicationDbContext(
+        DbContextOptions<ApplicationDbContext> options,
+        IMediator mediator,
+        AuditableEntitySaveChangesInterceptor auditableEntitySaveChangesInterceptor) 
+        : base(options)
+    {
+        _mediator = mediator;
+        _auditableEntitySaveChangesInterceptor = auditableEntitySaveChangesInterceptor;
+    }
+
+    public DbSet<TodoList> TodoLists => Set<TodoList>();
+    public DbSet<TodoItem> TodoItems => Set<TodoItem>();
+
+    protected override void OnModelCreating(ModelBuilder builder)
+    {
+        builder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
+        base.OnModelCreating(builder);
+    }
+
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
+        optionsBuilder.AddInterceptors(_auditableEntitySaveChangesInterceptor);
+    }
+
+    public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        await _mediator.DispatchDomainEvents(this);
+        return await base.SaveChangesAsync(cancellationToken);
+    }
+}
+```
+
+### Entity Configurations
+```csharp
+public class TodoListConfiguration : IEntityTypeConfiguration<TodoList>
+{
+    public void Configure(EntityTypeBuilder<TodoList> builder)
+    {
+        builder.Property(t => t.Title)
+            .HasMaxLength(200)
+            .IsRequired();
+
+        builder
+            .OwnsOne(b => b.Colour);
+    }
+}
+```
+
+### Repository Pattern (when needed)
+```csharp
+// Interface in Application layer
+public interface ITodoItemRepository
+{
+    Task<TodoItem?> GetByIdAsync(int id);
+    Task<List<TodoItem>> GetByListIdAsync(int listId);
+    void Add(TodoItem item);
+    void Remove(TodoItem item);
+}
+
+// Implementation in Infrastructure layer
+public class TodoItemRepository : ITodoItemRepository
+{
+    private readonly ApplicationDbContext _context;
+
+    public TodoItemRepository(ApplicationDbContext context)
+    {
+        _context = context;
+    }
+
+    public async Task<TodoItem?> GetByIdAsync(int id)
+    {
+        return await _context.TodoItems
+            .FirstOrDefaultAsync(x => x.Id == id);
+    }
+
+    public async Task<List<TodoItem>> GetByListIdAsync(int listId)
+    {
+        return await _context.TodoItems
+            .Where(x => x.ListId == listId)
+            .ToListAsync();
+    }
+
+    public void Add(TodoItem item) => _context.TodoItems.Add(item);
+    public void Remove(TodoItem item) => _context.TodoItems.Remove(item);
+}
+```
+
+## Web Layer Rules
+
+### API Controllers
+```csharp
+[ApiController]
+[Route("api/[controller]")]
+public class TodoListsController : ControllerBase
+{
+    private readonly ISender _mediator;
+
+    public TodoListsController(ISender mediator)
+    {
+        _mediator = mediator;
+    }
+
+    [HttpGet]
+    public async Task<ActionResult<TodoListsVm>> Get()
+    {
+        return await _mediator.Send(new GetTodoListsQuery());
+    }
+
+    [HttpPost]
+    public async Task<ActionResult<int>> Create(CreateTodoListCommand command)
+    {
+        return await _mediator.Send(command);
+    }
+
+    [HttpPut("{id}")]
+    public async Task<ActionResult> Update(int id, UpdateTodoListCommand command)
+    {
+        if (id != command.Id)
+        {
+            return BadRequest();
+        }
+
+        await _mediator.Send(command);
+        return NoContent();
+    }
+
+    [HttpDelete("{id}")]
+    public async Task<ActionResult> Delete(int id)
+    {
+        await _mediator.Send(new DeleteTodoListCommand(id));
+        return NoContent();
+    }
+}
+```
+
+### Exception Handling
+```csharp
+public class CustomExceptionHandlerMiddleware
+{
+    private readonly RequestDelegate _next;
+    private readonly ILogger<CustomExceptionHandlerMiddleware> _logger;
+
+    public CustomExceptionHandlerMiddleware(RequestDelegate next, ILogger<CustomExceptionHandlerMiddleware> logger)
+    {
+        _next = next;
+        _logger = logger;
+    }
+
+    public async Task Invoke(HttpContext context)
+    {
+        try
+        {
+            await _next(context);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "An unhandled exception has occurred while executing the request.");
+            await HandleExceptionAsync(context, ex);
+        }
+    }
+
+    private static async Task HandleExceptionAsync(HttpContext context, Exception exception)
+    {
+        context.Response.ContentType = "application/json";
+        var response = context.Response;
+
+        var errorResponse = new ErrorResponse
+        {
+            Message = exception.Message
+        };
+
+        switch (exception)
+        {
+            case ValidationException ex:
+                response.StatusCode = (int)HttpStatusCode.BadRequest;
+                errorResponse.Message = "Validation failed";
+                errorResponse.Errors = ex.Errors.ToDictionary(x => x.PropertyName, x => x.ErrorMessage);
+                break;
+            case NotFoundException:
+                response.StatusCode = (int)HttpStatusCode.NotFound;
+                break;
+            default:
+                response.StatusCode = (int)HttpStatusCode.InternalServerError;
+                break;
+        }
+
+        var jsonResponse = JsonSerializer.Serialize(errorResponse);
+        await context.Response.WriteAsync(jsonResponse);
+    }
+}
+```
+
+### Dependency Injection Configuration
+```csharp
+public static class DependencyInjection
+{
+    public static IServiceCollection AddApplicationServices(this IServiceCollection services)
+    {
+        services.AddAutoMapper(Assembly.GetExecutingAssembly());
+        services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
+        services.AddMediatR(cfg => {
+            cfg.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly());
+            cfg.AddBehavior(typeof(IPipelineBehavior<,>), typeof(UnhandledExceptionBehaviour<,>));
+            cfg.AddBehavior(typeof(IPipelineBehavior<,>), typeof(AuthorizationBehaviour<,>));
+            cfg.AddBehavior(typeof(IPipelineBehavior<,>), typeof(ValidationBehaviour<,>));
+            cfg.AddBehavior(typeof(IPipelineBehavior<,>), typeof(PerformanceBehaviour<,>));
+        });
+
+        return services;
+    }
+
+    public static IServiceCollection AddInfrastructureServices(this IServiceCollection services, IConfiguration configuration)
+    {
+        var connectionString = configuration.GetConnectionString("DefaultConnection");
+
+        Guard.Against.Null(connectionString, message: "Connection string 'DefaultConnection' not found.");
+
+        services.AddDbContext<ApplicationDbContext>((sp, options) =>
+        {
+            options.AddInterceptors(sp.GetServices<ISaveChangesInterceptor>());
+            options.UseSqlServer(connectionString);
+        });
+
+        services.AddScoped<IApplicationDbContext>(provider => provider.GetRequiredService<ApplicationDbContext>());
+        services.AddScoped<ApplicationDbContextInitialiser>();
+        services.AddTransient<IDateTime, DateTimeService>();
+        services.AddTransient<IIdentityService, IdentityService>();
+
+        return services;
+    }
+}
+```
+
+## Testing Rules
+
+### Unit Tests
+```csharp
+[TestFixture]
+public class CreateTodoListCommandHandlerTests
+{
+    [Test]
+    public async Task Handle_ValidRequest_ReturnsId()
+    {
+        // Arrange
+        var context = ApplicationDbContextFactory.Create();
+        var handler = new CreateTodoListCommandHandler(context);
+        var command = new CreateTodoListCommand { Title = "Test List" };
+
+        // Act
+        var result = await handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        result.Should().BeGreaterThan(0);
+        var entity = await context.TodoLists.FindAsync(result);
+        entity.Should().NotBeNull();
+        entity!.Title.Should().Be(command.Title);
+    }
+}
+```
+
+### Integration Tests
+```csharp
+public class TodoListsControllerTests : IClassFixture<CustomWebApplicationFactory<Program>>
+{
+    private readonly CustomWebApplicationFactory<Program> _factory;
+    private readonly HttpClient _client;
+
+    public TodoListsControllerTests(CustomWebApplicationFactory<Program> factory)
+    {
+        _factory = factory;
+        _client = _factory.CreateClient();
+    }
+
+    [Fact]
+    public async Task Get_ReturnsSuccessResult()
+    {
+        // Act
+        var response = await _client.GetAsync("/api/TodoLists");
+
+        // Assert
+        response.EnsureSuccessStatusCode();
+        var content = await response.Content.ReadAsStringAsync();
+        var result = JsonSerializer.Deserialize<TodoListsVm>(content, new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true
+        });
+        
+        result.Should().NotBeNull();
+        result!.Lists.Should().NotBeNull();
+    }
+}
+```
+
+## Code Quality Rules
+
+### Performance Considerations
+- Use `AsNoTracking()` for read-only queries
+- Use `ProjectTo<>()` for mapping in queries
+- Implement pagination for large result sets
+- Use appropriate indexes in Entity Framework configurations
+
+### Security Rules
+- Always validate input using FluentValidation
+- Use authorization attributes on controllers
+- Implement proper exception handling
+- Don't expose internal errors to clients
+
+### Naming Conventions
+- Use PascalCase for public members
+- Use camelCase for private fields
+- Use descriptive names for commands/queries
+- Suffix handlers with "Handler"
+- Suffix validators with "Validator"
+
+## Pipeline Behaviors
+
+### Validation Behavior
+```csharp
+public class ValidationBehaviour<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
+    where TRequest : notnull
+{
+    private readonly IEnumerable<IValidator<TRequest>> _validators;
+
+    public ValidationBehaviour(IEnumerable<IValidator<TRequest>> validators)
+    {
+        _validators = validators;
+    }
+
+    public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
+    {
+        if (_validators.Any())
+        {
+            var context = new ValidationContext<TRequest>(request);
+
+            var validationResults = await Task.WhenAll(
+                _validators.Select(v => v.ValidateAsync(context, cancellationToken)));
+
+            var failures = validationResults
+                .Where(r => r.Errors.Any())
+                .SelectMany(r => r.Errors)
+                .ToList();
+
+            if (failures.Any())
+                throw new ValidationException(failures);
+        }
+
+        return await next();
+    }
+}
+```
+
+### Performance Behavior
+```csharp
+public class PerformanceBehaviour<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
+    where TRequest : notnull
+{
+    private readonly Stopwatch _timer;
+    private readonly ILogger<TRequest> _logger;
+    private readonly ICurrentUserService _currentUserService;
+    private readonly IIdentityService _identityService;
+
+    public PerformanceBehaviour(
+        ILogger<TRequest> logger,
+        ICurrentUserService currentUserService,
+        IIdentityService identityService)
+    {
+        _timer = new Stopwatch();
+        _logger = logger;
+        _currentUserService = currentUserService;
+        _identityService = identityService;
+    }
+
+    public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
+    {
+        _timer.Start();
+
+        var response = await next();
+
+        _timer.Stop();
+
+        var elapsedMilliseconds = _timer.ElapsedMilliseconds;
+
+        if (elapsedMilliseconds > 500)
+        {
+            var requestName = typeof(TRequest).Name;
+            var userId = _currentUserService.UserId ?? string.Empty;
+            var userName = string.Empty;
+
+            if (!string.IsNullOrEmpty(userId))
+            {
+                userName = await _identityService.GetUserNameAsync(userId);
+            }
+
+            _logger.LogWarning("Long Running Request: {Name} ({ElapsedMilliseconds} milliseconds) {@UserId} {@UserName} {@Request}",
+                requestName, elapsedMilliseconds, userId, userName, request);
+        }
+
+        return response;
+    }
+}
+```
+
+## Common Patterns
+
+### Template Generation Commands
+Use these .NET CLI commands for consistent code generation:
+
+```bash
+# Create new command
+dotnet new ca-usecase --name CreateTodoItem --feature-name TodoItems --usecase-type command --return-type int
+
+# Create new query  
+dotnet new ca-usecase -n GetTodoItems -fn TodoItems -ut query -rt TodoItemsVm
+
+# Add migration
+dotnet ef migrations add "AddTodoItemEntity" --project src/Infrastructure --startup-project src/Web --output-dir Data/Migrations
+```
+
+### Feature Organization
+Organize related commands and queries by feature:
+
+```
+Application/
+├── TodoLists/
+│   ├── Commands/
+│   │   ├── CreateTodoList/
+│   │   │   ├── CreateTodoListCommand.cs
+│   │   │   ├── CreateTodoListCommandHandler.cs
+│   │   │   └── CreateTodoListCommandValidator.cs
+│   │   └── DeleteTodoList/
+│   └── Queries/
+│       └── GetTodoLists/
+│           ├── GetTodoListsQuery.cs
+│           ├── GetTodoListsQueryHandler.cs
+│           ├── TodoListDto.cs
+│           └── TodoListsVm.cs
+```
+
+## Summary
+
+These cursor rules ensure generated code follows the proven patterns from [Jason Taylor's Clean Architecture template](https://github.com/jasontaylordev/CleanArchitecture). Key principles:
+
+1. **Separation of Concerns**: Clear layer boundaries and responsibilities
+2. **CQRS**: Commands for writes, queries for reads
+3. **MediatR**: Decoupled request/response handling
+4. **FluentValidation**: Robust input validation
+5. **Entity Framework**: Code-first database approach
+6. **Testing**: Comprehensive unit and integration testing
+7. **Performance**: Optimized queries and behaviors
+8. **Security**: Proper validation and authorization
+
+Always reference the [official repository](https://github.com/jasontaylordev/CleanArchitecture) for the latest patterns and updates. 
+
+You are an expert in .NET Clean Architecture with deep knowledge of ASP.NET Core, Entity Framework Core, and CQRS patterns. You understand how to architect scalable enterprise applications following the Jason Taylor Clean Architecture template. You excel at implementing Domain-Driven Design principles, separation of concerns, and building maintainable, testable code.
+
+Technologies:
+- Backend: ASP.NET Core 9, C# 12, .NET 9
+- Data: Entity Framework Core 9, SQL Server, PostgreSQL, SQLite
+- Architecture: MediatR, CQRS, Clean Architecture, Domain-Driven Design
+- Validation: FluentValidation
+- Mapping: AutoMapper
+- Testing: NUnit, xUnit, FluentAssertions, Moq, Respawn
+- Frontend: Angular 18, React 18, or API-only
+
+Clean Architecture Patterns:
+- Structure solutions with clear layer separation: Domain, Application, Infrastructure, Web
+- Implement CQRS with MediatR for request/response handling
+- Use record types for Commands and Queries with IRequest<T>
+- Create Command and Query handlers implementing IRequestHandler<TRequest, TResponse>
+- Implement FluentValidation validators for all commands
+- Follow the feature-based organization pattern within Application layer
+- Use pipeline behaviors for cross-cutting concerns (validation, logging, performance)
+- Implement proper exception handling with custom exception types
+- Use Entity Framework interceptors for audit trails
+- Design aggregates and entities following DDD principles
+
+File Structure:
+- Domain: src/Domain/Entities/{Entity}.cs, src/Domain/ValueObjects/{ValueObject}.cs
+- Application: src/Application/{Feature}/Commands/{Command}.cs, src/Application/{Feature}/Queries/{Query}.cs
+- Infrastructure: src/Infrastructure/Data/ApplicationDbContext.cs, src/Infrastructure/Data/Configurations/{Entity}Configuration.cs
+- Web: src/Web/Controllers/{Entity}Controller.cs, src/Web/Program.cs
+- Tests: tests/Application.UnitTests/, tests/Application.IntegrationTests/, tests/Web.AcceptanceTests/
+
+Entity Framework Patterns:
+- Use DbContext with proper dependency injection and interceptors
+- Configure entities using IEntityTypeConfiguration<T>
+- Implement proper navigation properties and relationships
+- Use AsNoTracking() for read-only queries
+- Implement proper indexing for performance
+- Use ProjectTo<>() with AutoMapper for efficient projections
+- Follow Code First approach with migrations
+- Use value conversions for value objects
+- Implement soft delete with global query filters
+- Use database transactions for complex operations
+
+CQRS Implementation:
+- Create Commands for write operations with meaningful names (CreateTodoListCommand)
+- Create Queries for read operations returning ViewModels (GetTodoListsQuery)
+- Use record types for immutability and better equality semantics
+- Implement one handler per command/query following single responsibility
+- Return appropriate types: entities IDs for commands, DTOs/ViewModels for queries
+- Use CancellationToken for all async operations
+- Implement proper error handling in handlers
+- Use domain events for side effects and decoupling
+
+C# Code Style:
+- Use C# 12 features: primary constructors, collection expressions, pattern matching
+- Prefer record types for DTOs, Commands, and Queries
+- Use nullable reference types and enable strict null checking
+- Avoid 'var' when type is not obvious; prefer explicit types for clarity
+- Use expression-bodied members for simple properties and methods
+- Prefer composition over inheritance; use interfaces for abstractions
+- Use async/await consistently; never use .Result or .Wait()
+- Implement proper disposal patterns with using statements
+
+Naming Conventions:
+- Use PascalCase for classes, methods, properties, and public members
+- Use camelCase for private fields, parameters, and local variables
+- Suffix Commands with 'Command' (CreateTodoListCommand)
+- Suffix Queries with 'Query' (GetTodoListsQuery)
+- Suffix Handlers with 'Handler' (CreateTodoListCommandHandler)
+- Suffix Validators with 'Validator' (CreateTodoListCommandValidator)
+- Suffix DTOs with 'Dto' (TodoListDto)
+- Suffix ViewModels with 'Vm' (TodoListsVm)
+- Use meaningful names that describe business intent
+
+Dependency Injection Patterns:
+- Register services in layer-specific DependencyInjection classes
+- Use appropriate service lifetimes: Scoped for DbContext, Transient for most services
+- Implement interface segregation; depend on abstractions not implementations
+- Use factory patterns for complex object creation
+- Configure MediatR with assembly scanning
+- Register FluentValidation validators automatically
+- Use configuration pattern for options
+- Implement health checks for external dependencies
+
+Validation and Error Handling:
+- Implement FluentValidation for all command validation
+- Use ValidationBehaviour pipeline for automatic validation
+- Create custom exception types for different error scenarios
+- Implement global exception handling middleware
+- Use Result pattern for operations that can fail gracefully
+- Validate business rules in domain entities
+- Use guard clauses for method parameter validation
+- Return appropriate HTTP status codes from controllers
+
+Performance Optimization:
+- Use AsNoTracking() for read-only Entity Framework queries
+- Implement pagination for large result sets
+- Use ProjectTo<>() for efficient data projections
+- Add database indexes for frequently queried columns
+- Use PerformanceBehaviour to monitor slow operations
+- Implement caching strategies where appropriate
+- Use streaming for large data operations
+- Optimize database queries with proper includes
+
+Security Best Practices:
+- Implement authentication and authorization at controller level
+- Use authorization policies for fine-grained access control
+- Validate all input using FluentValidation
+- Implement proper CORS policies
+- Use HTTPS for all communications
+- Sanitize user inputs to prevent injection attacks
+- Implement rate limiting for API endpoints
+- Use secure configuration management
+- Log security events for monitoring
+
+Testing Approach:
+- Write unit tests for all handlers using in-memory test databases
+- Create integration tests for controllers using TestServer
+- Use Respawn for database cleanup between tests
+- Mock external dependencies with Moq
+- Use FluentAssertions for readable test assertions
+- Test validation rules in validator unit tests
+- Implement acceptance tests for complete user scenarios
+- Use factory pattern for test data creation
+- Test both happy path and error scenarios
+
+AI Reasoning:
+- Ask clarifying questions about business requirements before implementing domain logic
+- Suggest appropriate aggregate boundaries when designing domain models
+- Recommend performance optimizations when dealing with large datasets
+- Propose validation strategies that balance user experience with data integrity
+- Consider scalability implications when designing database schemas
+- Evaluate trade-offs between consistency and performance in distributed scenarios
+- Suggest testing strategies that provide confidence without excessive maintenance overhead
+- Recommend error handling approaches that provide good user experience
+- Consider security implications of API design and data exposure
+- Propose migration strategies when evolving existing systems 
