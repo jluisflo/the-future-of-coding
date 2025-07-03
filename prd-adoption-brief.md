@@ -1,6 +1,6 @@
-# 🚀 Manifiesto de Adopción de PRDs: Por Qué los Documentos de Requerimientos de Prompts Son Críticos Ahora
+# 🚀 Adopción de PRDs: Por Qué los Documentos de Requerimientos de Prompts Son Críticos Ahora
 
-## 📋 Resumen Ejecutivo
+## 📋 Resumen
 
 **Estamos en la Era del Vibe Coding.** Como observa [Takafumi Endo](https://medium.com/@takafumi.endo/prompt-requirements-document-prd-a-new-concept-for-the-vibe-coding-era-0fb7bf339400), los Documentos de Requerimientos de Productos tradicionales son insuficientes para el desarrollo impulsado por AI. Necesitamos **Documentos de Requerimientos de Prompts (PRDs)** - un nuevo paradigma que conecta la intención humana con la ejecución de AI.
 
