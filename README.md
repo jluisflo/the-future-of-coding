@@ -31,6 +31,14 @@ Pero **no nos dan**:
 - ❌ Frameworks para knowledge transfer
 - ❌ Patrones para consistencia arquitectónica
 
+### **El Desafío del No-Determinismo**
+
+Como observa [Martin Fowler](https://martinfowler.com/articles/2025-nature-abstraction.html), los LLMs introducen un desafío fundamental: *"When I wrote a Fortran function, I could compile it a hundred times, and the result still manifested the exact same bugs. Large Language Models introduce a non-deterministic abstraction, so I can't just store my prompts in git and know that I'll get the same behavior each time."*
+
+**¿Por qué los LLMs no son predecibles?** Su naturaleza probabilística significa que procesan el mismo input através de redes neuronales que introducen variabilidad inherente. Cada ejecución puede activar diferentes patrones, generar distintas interpretaciones, y producir soluciones válidas pero diferentes.
+
+**Este es el reto central**: necesitamos metodologías que nos permitan **acercarnos a la predictibilidad** trabajando con herramientas cuyo output naturalmente varía, manteniendo al mismo tiempo el control y la consistencia que requieren los proyectos enterprise.
+
 ### **Nuestra Convicción**
 
 **Creemos que la AI debería amplificar la inteligencia humana, no reemplazarla.**
