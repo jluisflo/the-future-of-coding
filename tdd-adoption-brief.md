@@ -2,7 +2,7 @@
 
 ## 📋 Resumen
 
-Esta guía presenta un framework innovador de **Task-Driven Development** que transforma cómo los equipos desarrollan software de manera estructurada. Combina metodologías probadas de planificación (PRD) con Git Flow y herramientas de AI para crear un proceso escalable, controlado y auditable que maximiza la productividad mientras minimiza los riesgos.
+Esta guía presenta un framework innovador de **Task-Driven Development** que transforma cómo los equipos desarrollan software de manera estructurada. Combina metodologías probadas de planificación con procesos de desarrollo controlados para crear un enfoque escalable, auditable y de alta calidad que maximiza la productividad mientras minimiza los riesgos.
 
 **Objetivo**: Crear un desarrollo más eficiente y predecible, manteniendo calidad, control y transferencia de conocimiento en el equipo.
 
@@ -24,7 +24,7 @@ Como define **Simon Willison**: *"building software with an LLM without reviewin
 - **Desarrollo no estructurado**: Features implementadas sin planificación clara
 - **Falta de control**: Cambios grandes sin revisión adecuada 
 - **Pérdida de contexto**: Decisiones de diseño no documentadas
-- **Inconsistencia**: Cada developer usa herramientas/AI diferente
+- **Inconsistencia**: Cada developer usa enfoques diferentes
 - **Scope creep**: Features que crecen sin límites definidos
 
 ## 💡 La Solución: Task-Driven Development
@@ -46,8 +46,8 @@ Como define **Simon Willison**: *"building software with an LLM without reviewin
 
 1. **Product Requirements Document (PRD)** como base de planificación
 2. **Task Lists granulares** derivadas del PRD para guiar implementación
-3. **Git Flow adaptado** para branches de planificación y desarrollo
-4. **AI Agents (Cursor)** como herramienta de implementación **controlada**
+3. **Flujo de trabajo estructurado** con branches de planificación y desarrollo
+4. **AI Assistants** como herramienta de implementación **controlada**
 5. **Proceso de revisión** en múltiples niveles
 
 ## 🏗️ Arquitectura del Proceso
@@ -85,11 +85,10 @@ graph TD
 ### **Developer/Feature Owner**
 - Crear PRD inicial
 - Generar task list
-- Orquestar AI agent
-- Implementar con guía de AI
+- Orquestar implementación
 - Documentar decisiones
 
-### **AI Agent (Cursor)**
+### **AI Assistant**
 - Generar código basado en tareas
 - Seguir patrones establecidos
 - Implementar una tarea a la vez
@@ -102,220 +101,83 @@ graph TD
 ```mermaid
 graph LR
     A[Feature Request] --> B[Create Feature Branch]
-    B --> C[Create Planning Branch from Feature]
-    C --> D[Generate PRD with AI]
-    D --> E[Save to docs/]
+    B --> C[Create Planning Branch]
+    C --> D[Generate PRD]
+    D --> E[Save Documentation]
     E --> F[Commit & Push Planning]
     
-    D1[Use create-prd.mdc]
+    D1[Define Problem & Solution]
     D --> D1
-    D1 --> D2[AI asks clarifying questions]
-    D2 --> D3[Developer provides context]
-    D3 --> D4[AI generates structured PRD]
+    D1 --> D2[Clarify Requirements]
+    D2 --> D3[Structure PRD]
+    D3 --> D4[Document Decision]
 ```
 
-```bash
-# 1. Crear feature branch (inicialmente vacío)
-git checkout -b feature/feature-name
-
-# 2. Crear planning branch desde feature
-git checkout -b planning/feature-name
-
-# 3. Generar PRD usando AI
-# En Cursor Chat:
-```
-Use create-prd.mdc
-Here's the feature I want to build: [Describe your feature in detail]
-Reference these files to help you: [Optional: @file1.py @file2.ts]
-```
-
-# 4. Commit del PRD
-git add docs/
-git commit -m "feat: add PRD for [feature-name]"
-git push origin planning/feature-name
-```
+**Elementos Clave del PRD:**
+- **Problema y Solución**: Qué problema resuelve y cómo
+- **Usuarios y Casos de Uso**: Quién lo usará y para qué
+- **Requisitos Funcionales**: Qué debe hacer el sistema
+- **Métricas de Éxito**: Cómo medir el éxito
+- **Fuera de Scope**: Qué explícitamente no incluye
 
 ### **Fase 2: Revisión de Planificación**
 
 ```mermaid
 graph TD
-    A["Create PR (planning → feature)"] --> B[Senior Reviews PRD]
+    A[Create Planning PR] --> B[Senior Reviews PRD]
     B --> C{PRD Approved?}
-    C -->|No| D[Provide Feedback via PR]
-    D --> E[Developer Updates Planning Branch]
+    C -->|No| D[Provide Feedback]
+    D --> E[Update Planning]
     E --> B
-    C -->|Yes| F[Senior Approves PR]
-    F --> G[Merge Planning → Feature]
-    G --> H[Feature Branch has Approved PRD]
+    C -->|Yes| F[Approve & Merge]
+    F --> G[Ready for Development]
     
     style C fill:#f9f,stroke:#333,stroke-width:2px
     style F fill:#9f9,stroke:#333,stroke-width:2px
-    style G fill:#9f9,stroke:#333,stroke-width:2px
 ```
 
-**Proceso:**
-- **PR**: `planning/feature-name` → `feature/feature-name`
-- Senior review del PRD usando herramientas nativas de Git
-- Feedback y refinamiento via comentarios de PR
-- **Aprobación y Merge**: Senior aprueba y hace merge del PRD al feature branch
-- Feature branch ahora contiene el PRD aprobado para desarrollo
+**Proceso de Revisión:**
+- Pull Request con PRD documentado
+- Senior review enfocado en arquitectura y scope
+- Iteración hasta aprobación
+- Merge a feature branch para comenzar desarrollo
 
 ### **Fase 3: Implementación Task-Driven**
 
 ```mermaid
 graph TD
-    A[Create Development Branch] --> B[Generate Task List]
-    B --> C[AI Creates Parent Tasks]
-    C --> D["Developer Approves with 'Go'"]
-    D --> E[AI Generates Sub-tasks]
-    E --> F[Start Task 1.1]
-    F --> G[AI Implements Task]
-    G --> H["Update Task List ✓"]
-    H --> I{Developer Review}
-    I -->|Approved| J[Commit Changes]
-    I -->|Needs Changes| G
-    J --> K{More Tasks?}
-    K -->|Yes| L[Next Task]
-    L --> G
-    K -->|No| M[Feature Complete]
+    A[Generate Task List] --> B[Create Parent Tasks]
+    B --> C[Break Down Sub-tasks]
+    C --> D[Start First Task]
+    D --> E[Implement Task]
+    E --> F[Review & Approve]
+    F --> G{More Tasks?}
+    G -->|Yes| H[Next Task]
+    H --> E
+    G -->|No| I[Feature Complete]
     
-    style I fill:#f9f,stroke:#333,stroke-width:2px
-    style J fill:#9f9,stroke:#333,stroke-width:2px
+    style F fill:#f9f,stroke:#333,stroke-width:2px
 ```
 
-```bash
-# 1. Continuar desarrollo en feature branch (ya tiene PRD aprobado)
-git checkout feature/feature-name  # Branch con PRD ya mergeado
+**Estructura de Tasks:**
+- **Parent Tasks**: Componentes principales (5-7 tasks)
+- **Sub-tasks**: Trabajo específico (30-60 min cada una)
+- **Acceptance Criteria**: Definición clara de "done"
+- **Files & Tests**: Archivos relevantes y estrategia de testing
 
-# 2. Generar task list
-# En Cursor Chat:
-```
-Now take @MyFeature-PRD.md and create tasks using @generate-tasks.mdc
-```
-
-# 3. Implementación iterativa
-# En Cursor Chat:
-```
-Please start on task 1.1 and use @process-task-list.mdc
-```
-# Después de cada tarea: commits frecuentes y aprobación del usuario
-
-# 4. Al final: PR que incluye PRD + código implementado
-git push origin feature/feature-name
-# Crear PR: feature/feature-name → main (incluye docs/ y código completo)
-```
-
-### **Fase 4: Revisión e Integración**
+### **Fase 4: Revisión Final**
 
 ```mermaid
 graph LR
-    A[Create Pull Request] --> B[Senior Code Review]
+    A[Create Feature PR] --> B[Senior Code Review]
     B --> C{Code Approved?}
-    C -->|No| D[Provide Feedback]
-    D --> E[Address Issues]
-    E --> B
-    C -->|Yes| F[Merge to Main]
-    F --> G[Deploy Feature]
+    C -->|No| D[Address Issues]
+    D --> B
+    C -->|Yes| E[Merge to Main]
+    E --> F[Deploy Feature]
     
     style C fill:#f9f,stroke:#333,stroke-width:2px
-    style F fill:#9f9,stroke:#333,stroke-width:2px
-```
-
-**Proceso:**
-- Pull Request de feature branch
-- Code review por Senior
-- Merge a main después de aprobación
-
-## 💬 Comandos de Cursor - Workflow Completo
-
-```mermaid
-sequenceDiagram
-    participant D as Developer
-    participant C as Cursor AI
-    participant S as Senior/Tech Lead
-    
-    Note over D,D: Preparación Branches
-    D->>D: git checkout -b feature/feature-name
-    D->>D: git checkout -b planning/feature-name
-    
-    Note over D,C: Fase 1: Crear PRD
-    D->>C: Use create-prd.mdc<br/>Here's the feature I want to build: [descripción]<br/>Reference these files: @file1.py @file2.ts
-    C->>D: Hace preguntas clarificadoras
-    D->>C: Responde preguntas
-    C->>D: Genera PRD estructurado
-    
-    Note over D,S: Fase 2: Review PRD
-    D->>S: Envía PR (planning → feature) con PRD
-    S->>D: Revisa y aprueba PR
-    D->>D: Merge planning → feature
-    
-    Note over D,C: Fase 3: Generar Tareas
-    D->>C: Now take @MyFeature-PRD.md and create tasks using @generate-tasks.mdc
-    C->>D: Genera tareas principales
-    D->>C: "Go" (para generar sub-tareas)
-    C->>D: Genera lista completa de tareas
-    
-    Note over D,C: Fase 4: Implementación
-    D->>C: Please start on task 1.1 and use @process-task-list.mdc
-    loop Para cada tarea
-        C->>D: Implementa tarea
-        C->>D: Marca tarea como ✓
-        D->>C: "yes" (para continuar) o feedback
-    end
-    
-    Note over D,S: Fase 5: Review Final
-    D->>S: Envía PR (feature→main) con PRD + código completo
-    S->>D: Aprueba y merge a main
-```
-
-### 📋 Comandos Práticos para Copy-Paste
-
-**0. Setup de Branches:**
-```bash
-git checkout -b feature/feature-name
-git checkout -b planning/feature-name
-```
-
-**1. Crear PRD:**
-```
-Use create-prd.mdc
-Here's the feature I want to build: [Describe your feature in detail]
-Reference these files to help you: [Optional: @file1.py @file2.ts]
-```
-
-**2. Después del PR Review (planning → feature):**
-```bash
-git checkout feature/feature-name
-git merge planning/feature-name
-```
-
-**3. Generar Tareas:**
-```
-Now take @MyFeature-PRD.md and create tasks using @generate-tasks.mdc
-```
-
-**4. Iniciar Implementación:**
-```
-Please start on task 1.1 and use @process-task-list.mdc
-```
-
-## 📁 Estructura de Directorios
-
-```
-project/
-├── docs/
-│   ├── prd-feature-1.md
-│   ├── prd-feature-2.md
-│   └── ai-development-guide.md
-├── tasks/
-│   ├── tasks-feature-1.md
-│   ├── tasks-feature-2.md
-│   └── completed/
-└── .cursor/
-    └── rules/
-        ├── create-prd.mdc
-        ├── generate-tasks.mdc
-        └── process-task-list.mdc
+    style E fill:#9f9,stroke:#333,stroke-width:2px
 ```
 
 ## 🎯 Beneficios Esperados
@@ -328,22 +190,22 @@ project/
 
 ### **Para el Equipo**
 - 🧠 **Aprendizaje**: Seniors mentorean, juniors aprenden
-- 🎯 **Foco**: Desarrolladores se enfocan en lógica y arquitectura, no en sintaxis
-- 📈 **Crecimiento**: Exposición a mejores prácticas via tasks estructuradas y AI
+- 🎯 **Foco**: Desarrolladores se enfocan en lógica y arquitectura
+- 📈 **Crecimiento**: Exposición a mejores prácticas
 - 🤝 **Colaboración**: Proceso claro y compartido
 
 ### **Para la Calidad**
-- ✅ **Testing**: Tests generados automáticamente por task
+- ✅ **Testing**: Tests integrados en cada task
 - 📝 **Documentación**: PRDs y tasks como documentación viva
-- 🔒 **Consistencia**: Patrones uniformes via tasks estructuradas
-- 🛡️ **Revisión**: Múltiples puntos de control por task
+- 🔒 **Consistencia**: Patrones uniformes
+- 🛡️ **Revisión**: Múltiples puntos de control
 - 🎯 **Scope Control**: Tasks granulares previenen scope creep
 
 ## 📊 Métricas de Éxito
 
 ### **Métricas de Velocidad**
 - Throughput de features implementadas
-- Número de tareas completadas por sprint
+- Tiempo promedio de task completion
 - Eficiencia en procesos de review
 
 ### **Métricas de Calidad**
@@ -353,68 +215,64 @@ project/
 
 ### **Métricas de Adopción**
 - Porcentaje de features usando el proceso
-- Satisfacción del equipo (surveys)
+- Satisfacción del equipo
 - Eficiencia en onboarding de nuevos developers
 
 ## 🚀 Plan de Implementación
 
 ### **Fase 1: Preparación**
-- [ ] Setup de herramientas (.mdc files en `.cursor/rules/`)
-- [ ] Configuración de estructura de directorios (`docs/`, `tasks/`)
-- [ ] Capacitación del equipo en Cursor
-- [ ] Definición de templates y estándares
+- [ ] Definir estructura de documentación
+- [ ] Establecer templates y estándares
+- [ ] Capacitar al equipo en metodología
+- [ ] Crear ejemplos de referencia
 
 ### **Fase 2: Piloto**
 - [ ] Seleccionar 1-2 features pequeñas
 - [ ] Implementar con el proceso completo
 - [ ] Recopilar feedback y ajustar
+- [ ] Documentar lecciones aprendidas
 
 ### **Fase 3: Expansión**
 - [ ] Aplicar a features medianas
-- [ ] Refinar proceso basado en aprendizajes
-- [ ] Documentar mejores prácticas
+- [ ] Refinar proceso basado en experiencia
+- [ ] Entrenar a más miembros del equipo
+- [ ] Establecer métricas de seguimiento
 
 ### **Fase 4: Adopción Completa**
 - [ ] Implementar en todo el equipo
-- [ ] Establecer métricas de seguimiento
-- [ ] Plan de mejora continua
+- [ ] Crear proceso de mejora continua
+- [ ] Establecer centro de excelencia
+- [ ] Compartir mejores prácticas
 
 ## ⚠️ Consideraciones y Riesgos
 
-### **Riesgos Técnicos**
-- **Dependencia de AI**: Mitigar con training del equipo
+### **Riesgos de Proceso**
+- **Overhead inicial**: Mitigar con templates y training
+- **Resistencia al cambio**: Comunicar beneficios claramente
+- **Rigidez excesiva**: Mantener flexibilidad en la implementación
+
+### **Riesgos de Calidad**
 - **Calidad variable**: Establecer checkpoints de revisión
 - **Deuda técnica**: Reviews rigurosos y refactoring regular
+- **Dependencia**: Balancear AI assistance con skill development
 
-### **Riesgos de Adopción**
-- **Resistencia al cambio**: Comunicación clara de beneficios
-- **Curva de aprendizaje**: Capacitación y mentoring
-- **Inversión inicial**: Evaluación de beneficios y medición de resultados
+## 🎯 Principios Fundamentales
 
-## 🎓 Próximos Pasos
+### **Transparencia sobre Velocidad**
+- Cada decisión debe ser explicable
+- Procesos auditables y documentados
+- Control humano en decisiones críticas
 
-1. **Revisar este documento** todo con el equipo técnico
-2. **Seleccionar equipo piloto** (1 senior + 2-3 developers)
-3. **Definir primera feature** para implementación
-4. **Establecer métricas baseline** antes de iniciar
-5. **Planificar sesiones de feedback** regulares
+### **Aprendizaje sobre Automatización**
+- Developers aprenden mientras construyen
+- Knowledge transfer embebido en tareas
+- Capacidades humanas amplificadas, no reemplazadas
 
-## 🙏 Reconocimientos
-
-Este framework está basado en el excelente trabajo original de **[AI Dev Tasks](https://github.com/snarktank/ai-dev-tasks)** por [@snarktank](https://github.com/snarktank) (Ryan Carson). 
-
-Los archivos `.mdc` core (create-prd.mdc, generate-tasks.mdc, process-task-list.mdc) fueron creados por este proyecto pionero que demostró cómo estructurar el desarrollo con AI en Cursor de manera sistemática.
-
-**🎯 Nuestra Contribución**: Hemos extendido estos conceptos fundamentales agregando:
-- **Git Flow estructurado** para planning y development branches
-- **Proceso de revisión** multi-nivel con seniors
-- **Framework empresarial** para adopción organizacional
-- **Contraste con vibe coding** y posicionamiento estratégico
-- **Métricas y plan de implementación** para equipos
-
-Agradecemos profundamente a la comunidad open source y especialmente al trabajo original que hizo posible este framework.
+### **Calidad sobre Cantidad**
+- Mejor menos features bien hechas
+- Testing y documentación como ciudadanos de primera clase
+- Sostenibilidad a largo plazo
 
 ---
 
-**Contacto**: [@jluisflo](https://github.com/jluisflo)
-**Actualización**: Este documento se actualizará basado en aprendizajes del piloto 
+*El futuro del desarrollo no es automatizar el pensamiento, sino estructurar la creatividad* 

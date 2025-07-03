@@ -2,7 +2,7 @@
 
 ## 📋 Resumen
 
-**The Future of Coding** es un framework integral que revoluciona cómo los desarrolladores trabajan con herramientas de AI. En lugar del caótico "vibe coding," proporcionamos metodologías estructuradas que elevan a cualquier desarrollador para producir código de nivel senior con asistencia de AI.
+**The Future of Coding** es un framework integral que revoluciona cómo los desarrolladores trabajan con AI. En lugar del caótico "vibe coding," proporcionamos metodologías estructuradas que elevan a cualquier desarrollador para producir código de nivel senior con asistencia de AI.
 
 ## 💡 La Motivación
 
@@ -38,7 +38,7 @@ Pero **no nos dan**:
 El futuro no es developers que no entienden su código. El futuro son developers que:
 - 🧠 **Piensan a nivel arquitectónico** mientras la AI maneja la implementación
 - 🎯 **Mantienen control granular** sobre cada decisión importante
-- 📚 **Aprenden patrones senior** através de AI bien estructurada
+- 📚 **Aprenden patrones senior** través de AI bien estructurada
 - 🚀 **Escalan su impacto** sin sacrificar calidad
 
 **Este framework existe porque creemos que podemos tener velocidad, calidad, productividad, comprensión, innovación y control.**
@@ -72,8 +72,8 @@ Un enfoque estructurado para el desarrollo asistido por AI que reemplaza el caó
 **Componentes Principales:**
 - **Product Requirements Documents (PRD)** como base de planificación
 - **Task lists granulares** derivadas de PRDs
-- **Integración con Git Flow** usando branches de planning y development
-- **AI agents** como herramientas de implementación controlada
+- **Integración con flujos de trabajo** usando branches de planning y development
+- **AI assistants** como herramientas de implementación controlada
 - **Procesos de revisión multinivel** para aseguramiento de calidad
 
 **Beneficios Clave:**
@@ -81,8 +81,6 @@ Un enfoque estructurado para el desarrollo asistido por AI que reemplaza el caó
 - ✅ **Resultados predecibles**: Planificación estructurada previene scope creep
 - ✅ **Enterprise-ready**: Procesos auditables y documentación clara
 - ✅ **Escalabilidad de equipo**: Workflows consistentes entre desarrolladores
-
-📖 **[Ver guía completa de implementación →](./tdd-adoption-brief.md)**
 
 ### 🎯 **Pilar 2: Senior-Level Code Generation Guidelines**
 
@@ -125,18 +123,6 @@ graph LR
 3. **✅ Revisa**: Verificaciones de calidad multinivel aseguran excelencia
 4. **🚀 Despliega**: Código production-ready que sigue estándares enterprise
 
-## 🛠️ Herramientas del Ecosistema
-
-### **🎯 Herramienta Principal: Cursor**
-
-**[Cursor](https://cursor.sh)** es el AI Code Editor que potencia todo el framework a través de:
-
-- **📋 AI Chat**: Para generación de PRDs y planificación estructurada
-- **🗂️ .mdc files**: Scripts reutilizables que implementan el Task-Driven Development
-- **🤖 AI Chat**: Interacción natural para desarrollo guiado por tareas
-- **⚡ Apply**: Implementación rápida con revisión humana
-- **📁 @file references**: Contexto preciso para AI agents
-
 ## 🎯 Audiencia Objetivo
 
 ### **👨‍💼 Para Líderes de Ingeniería**
@@ -157,15 +143,23 @@ graph LR
 - Reducir deuda técnica e inconsistencias
 - Asegurar el futuro de las prácticas de desarrollo
 
-## 🤝 Contribuciones
+## 🎯 Principios Fundamentales
 
-Damos la bienvenida a contribuciones para ambos pilares del framework:
+### **Control, No Automatización Ciega**
+- Cada decisión importante requiere aprobación humana
+- Tasks granulares permiten revisión incremental
+- AI implementa, humans supervisan y aprueban
 
-- **Task-Driven Framework**: Mejoras de workflow, nuevos archivos .mdc, mejoras de Git Flow
-- **Senior Guidelines**: Nuevos patrones, estándares actualizados, templates de prompts
+### **Estructura, No Caos**
+- PRDs definen scope y objetivos claramente
+- Task lists proporcionan roadmap detallado
+- Procesos auditables y documentación viva
+
+### **Aprendizaje, No Dependencia**
+- Developers aprenden patrones senior a través de AI
+- Knowledge transfer embebido en el proceso
+- Capacidades humanas amplificadas, no reemplazadas
 
 ---
 
-**Construido con ❤️ por [@jluisflo](https://github.com/jluisflo)**
-
-*El futuro del coding no es escribirlo, sino desarrollar y potenciar agentes de AI que lo hagan*
+*El futuro del coding no es escribirlo, sino orquestar agentes de AI que lo hagan de manera estructurada y controlada*
